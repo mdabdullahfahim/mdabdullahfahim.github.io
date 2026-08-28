@@ -1,0 +1,463 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Admin — Visitor Chat</title>
+<meta name="robots" content="noindex, nofollow">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Schibsted+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+<style>
+  :root{
+    --primary:#7c3aed; --primary-light:#a855f7; --accent:#06b6d4; --accent2:#f0abfc;
+    --bg:#060d1a; --card:rgba(14,20,48,0.65); --text:#f1f5f9; --muted:#64748b;
+    --border:rgba(255,255,255,0.08); --glass:rgba(255,255,255,0.04); --glass-border:rgba(255,255,255,0.12);
+    --danger:#ef4444; --success:#22c55e;
+  }
+  *,*::before,*::after{box-sizing:border-box;}
+  html,body{margin:0;padding:0;height:100%;}
+  body{background:var(--bg);color:var(--text);font-family:'Inter',system-ui,sans-serif;background-image:radial-gradient(circle at 20% 10%,rgba(124,58,237,0.12),transparent 45%),radial-gradient(circle at 85% 80%,rgba(6,182,212,0.10),transparent 45%);}
+  h1,h2,h3,.font-head{font-family:'Schibsted Grotesk',sans-serif;}
+  ::-webkit-scrollbar{width:6px;height:6px;}
+  ::-webkit-scrollbar-thumb{background:rgba(255,255,255,0.15);border-radius:4px;}
+
+  /* ── LOGIN ── */
+  #login-screen{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px;}
+  .login-card{width:100%;max-width:380px;background:var(--card);border:1px solid var(--glass-border);border-radius:20px;padding:36px 32px;backdrop-filter:blur(20px);box-shadow:0 20px 60px rgba(0,0,0,0.5);}
+  .login-card h1{font-size:22px;font-weight:600;margin:0 0 4px;}
+  .login-card p{color:var(--muted);font-size:13px;margin:0 0 26px;}
+  .field{margin-bottom:16px;}
+  .field label{display:block;font-size:12px;color:var(--muted);margin-bottom:6px;}
+  .field input{width:100%;background:var(--glass);border:1px solid var(--border);border-radius:10px;padding:11px 13px;color:var(--text);font-size:14px;outline:none;transition:border-color .2s;}
+  .field input:focus{border-color:var(--primary-light);}
+  .btn-primary{width:100%;padding:12px;border:none;border-radius:10px;background:linear-gradient(135deg,var(--primary),var(--accent));color:#fff;font-weight:600;font-size:14px;cursor:pointer;transition:opacity .2s;}
+  .btn-primary:hover{opacity:.9;}
+  .btn-primary:disabled{opacity:.5;cursor:not-allowed;}
+  #login-error{color:var(--danger);font-size:12.5px;margin-top:14px;display:none;text-align:center;}
+
+  /* ── APP SHELL ── */
+  #app-screen{display:none;height:100vh;flex-direction:column;}
+  #topbar{display:flex;align-items:center;justify-content:space-between;padding:14px 22px;border-bottom:1px solid var(--border);background:rgba(6,11,25,0.7);backdrop-filter:blur(12px);flex-shrink:0;}
+  #topbar .brand{display:flex;align-items:center;gap:10px;font-weight:600;font-size:15px;}
+  #topbar .brand-icon{width:32px;height:32px;border-radius:9px;background:linear-gradient(135deg,var(--primary),var(--accent));display:flex;align-items:center;justify-content:center;}
+  #topbar .stats{display:flex;gap:18px;font-size:12.5px;color:var(--muted);}
+  #topbar .stats b{color:var(--text);}
+  #logout-btn{display:flex;align-items:center;gap:6px;background:var(--glass);border:1px solid var(--border);color:var(--text);padding:8px 13px;border-radius:9px;font-size:12.5px;cursor:pointer;}
+  #logout-btn:hover{border-color:var(--danger);color:var(--danger);}
+
+  #main-layout{flex:1;display:flex;min-height:0;}
+
+  /* ── SIDEBAR ── */
+  #sidebar{width:300px;flex-shrink:0;border-right:1px solid var(--border);display:flex;flex-direction:column;background:rgba(255,255,255,0.015);}
+  #search-wrap{padding:14px;border-bottom:1px solid var(--border);}
+  #search-input{width:100%;background:var(--glass);border:1px solid var(--border);border-radius:9px;padding:9px 12px;color:var(--text);font-size:13px;outline:none;}
+  #visitor-list{flex:1;overflow-y:auto;}
+  .visitor-item{padding:13px 16px;border-bottom:1px solid var(--border);cursor:pointer;transition:background .15s;position:relative;}
+  .visitor-item:hover{background:var(--glass);}
+  .visitor-item.active{background:rgba(124,58,237,0.14);border-left:2px solid var(--primary-light);}
+  .visitor-item .row1{display:flex;align-items:center;justify-content:space-between;gap:8px;}
+  .visitor-item .name{font-size:13.5px;font-weight:600;display:flex;align-items:center;gap:7px;}
+  .dot{width:8px;height:8px;border-radius:50%;background:var(--muted);flex-shrink:0;}
+  .dot.online{background:var(--success);box-shadow:0 0 8px var(--success);}
+  .visitor-item .ip{font-size:11px;color:var(--muted);margin-top:3px;font-family:monospace;}
+  .visitor-item .preview{font-size:12px;color:var(--muted);margin-top:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .visitor-item .meta-right{font-size:10.5px;color:var(--muted);white-space:nowrap;}
+  .unread-badge{background:var(--danger);color:#fff;font-size:10px;font-weight:700;min-width:17px;height:17px;border-radius:9px;display:inline-flex;align-items:center;justify-content:center;padding:0 4px;}
+  #empty-list{padding:30px 16px;text-align:center;color:var(--muted);font-size:12.5px;}
+
+  /* ── CHAT AREA ── */
+  #chat-area{flex:1;display:flex;flex-direction:column;min-width:0;}
+  #no-selection{flex:1;display:flex;align-items:center;justify-content:center;color:var(--muted);font-size:13.5px;flex-direction:column;gap:10px;}
+  #chat-content{display:none;flex:1;flex-direction:column;min-height:0;}
+  #chat-header{padding:16px 22px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;}
+  #chat-header .id-block{display:flex;flex-direction:column;gap:4px;}
+  #name-row{display:flex;align-items:center;gap:8px;}
+  #name-input{background:var(--glass);border:1px solid var(--border);border-radius:8px;padding:6px 10px;color:var(--text);font-size:14px;font-weight:600;font-family:'Schibsted Grotesk',sans-serif;min-width:160px;}
+  #name-input:focus{outline:none;border-color:var(--primary-light);}
+  #save-name-btn{background:var(--glass);border:1px solid var(--border);color:var(--accent);padding:6px 10px;border-radius:8px;font-size:11.5px;cursor:pointer;}
+  #save-name-btn:hover{border-color:var(--accent);}
+  #uid-sub{font-size:11px;color:var(--muted);font-family:monospace;}
+  #chat-header .info-pills{display:flex;gap:8px;flex-wrap:wrap;}
+  .pill{background:var(--glass);border:1px solid var(--border);border-radius:20px;padding:5px 11px;font-size:11px;color:var(--muted);display:flex;align-items:center;gap:5px;}
+  .pill b{color:var(--text);font-weight:500;}
+
+  #thread{flex:1;overflow-y:auto;padding:20px 22px;display:flex;flex-direction:column;gap:11px;}
+  .bubble{max-width:62%;padding:10px 14px;border-radius:14px;font-size:13.5px;line-height:1.5;word-wrap:break-word;white-space:pre-wrap;position:relative;}
+  .bubble .t{font-size:10px;opacity:.55;margin-top:4px;}
+  .bubble-admin{align-self:flex-end;background:linear-gradient(135deg,var(--primary),var(--primary-light));color:#fff;border-bottom-right-radius:4px;}
+  .bubble-visitor{align-self:flex-start;background:var(--glass);border:1px solid var(--border);color:var(--text);border-bottom-left-radius:4px;}
+
+  #composer{display:flex;gap:10px;padding:16px 22px;border-top:1px solid var(--border);}
+  #composer input{flex:1;background:var(--glass);border:1px solid var(--border);border-radius:10px;padding:11px 14px;color:var(--text);font-size:13.5px;outline:none;}
+  #composer input:focus{border-color:var(--primary-light);}
+  #composer button{padding:0 20px;border:none;border-radius:10px;background:linear-gradient(135deg,var(--primary),var(--accent));color:#fff;font-weight:600;font-size:13px;cursor:pointer;display:flex;align-items:center;gap:6px;}
+  #composer button:hover{opacity:.9;}
+
+  @media(max-width:820px){
+    #sidebar{position:fixed;inset:0;top:61px;z-index:40;transform:translateX(-100%);transition:transform .25s ease;width:100%;}
+    #sidebar.mobile-open{transform:translateX(0);}
+    #chat-area{width:100%;}
+    #back-btn{display:inline-flex !important;}
+  }
+  #back-btn{display:none;background:var(--glass);border:1px solid var(--border);color:var(--text);width:32px;height:32px;border-radius:8px;align-items:center;justify-content:center;cursor:pointer;}
+</style>
+</head>
+<body>
+
+<!-- ═══════════ LOGIN ═══════════ -->
+<div id="login-screen">
+  <div class="login-card">
+    <h1>Admin Sign In</h1>
+    <p>Visitor chat & tracking dashboard</p>
+    <form id="login-form">
+      <div class="field">
+        <label>Email</label>
+        <input type="email" id="login-email" required autocomplete="username" />
+      </div>
+      <div class="field">
+        <label>Password</label>
+        <input type="password" id="login-password" required autocomplete="current-password" />
+      </div>
+      <button type="submit" class="btn-primary" id="login-btn">Sign In</button>
+      <div id="login-error"></div>
+    </form>
+  </div>
+</div>
+
+<!-- ═══════════ APP ═══════════ -->
+<div id="app-screen">
+  <div id="topbar">
+    <div class="brand">
+      <div class="brand-icon">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>
+      </div>
+      <span>Visitor Chat Admin</span>
+    </div>
+    <div class="stats">
+      <span>Total: <b id="stat-total">0</b></span>
+      <span>Online: <b id="stat-online">0</b></span>
+    </div>
+    <button id="logout-btn"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>Sign out</button>
+  </div>
+
+  <div id="main-layout">
+    <div id="sidebar">
+      <div id="search-wrap">
+        <input id="search-input" type="text" placeholder="Search by name, ID or IP…" />
+      </div>
+      <div id="visitor-list"></div>
+    </div>
+
+    <div id="chat-area">
+      <div id="no-selection">
+        <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" opacity="0.4"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>
+        <span>Select a visitor to start chatting</span>
+      </div>
+      <div id="chat-content">
+        <div id="chat-header">
+          <div class="id-block">
+            <button id="back-btn"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg></button>
+            <div id="name-row">
+              <input id="name-input" type="text" placeholder="Set a name…" />
+              <button id="save-name-btn">Save</button>
+            </div>
+            <div id="uid-sub"></div>
+          </div>
+          <div class="info-pills">
+            <span class="pill"><span class="dot" id="header-dot"></span><b id="header-status">offline</b></span>
+            <span class="pill">IP: <b id="header-ip">—</b></span>
+            <span class="pill" id="header-ip-history-pill" style="display:none;cursor:pointer;" title="Click to view every IP this visitor has connected from">IP history: <b id="header-ip-count">0</b></span>
+            <span class="pill">First seen: <b id="header-first">—</b></span>
+          </div>
+          <div id="ip-history-panel" style="display:none;width:100%;background:var(--glass);border:1px solid var(--border);border-radius:10px;padding:10px 12px;margin-top:10px;font-size:11.5px;font-family:monospace;color:var(--muted);"></div>
+        </div>
+        <div id="thread"></div>
+        <form id="composer">
+          <input id="composer-input" type="text" placeholder="Type a reply…" autocomplete="off" maxlength="2000" />
+          <button type="submit">Send <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg></button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+import {
+  getAuth, onAuthStateChanged, signInWithEmailAndPassword, signOut
+} from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+import {
+  getFirestore, doc, updateDoc, collection, addDoc, query, orderBy,
+  onSnapshot, serverTimestamp, writeBatch, where, getDocs
+} from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+
+const ADMIN_EMAIL = "abdullahfahim139549@gmail.com";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyCgQmr77uBTWmv3MZ54jfiyUFWcxnJ1MOM",
+  authDomain: "my-website-anonym-chat.firebaseapp.com",
+  projectId: "my-website-anonym-chat",
+  storageBucket: "my-website-anonym-chat.firebasestorage.app",
+  messagingSenderId: "420313384910",
+  appId: "1:420313384910:web:116cb3c9e8c670e2054d9f"
+};
+
+const app = initializeApp(firebaseConfig, "adminApp");
+const auth = getAuth(app);
+const db = getFirestore(app);
+
+const $ = (id) => document.getElementById(id);
+const ONLINE_WINDOW_MS = 60000;
+
+let visitorsCache = [];
+let selectedUid = null;
+let threadUnsub = null;
+let renderedMsgIds = new Set();
+let visitorsUnsub = null;
+
+// ── LOGIN ──
+$('login-form').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const email = $('login-email').value.trim();
+  const password = $('login-password').value;
+  const btn = $('login-btn');
+  const err = $('login-error');
+  err.style.display = 'none';
+  btn.disabled = true;
+  btn.textContent = 'Signing in…';
+  try {
+    await signInWithEmailAndPassword(auth, email, password);
+  } catch (e2) {
+    err.textContent = 'Sign in failed: ' + (e2.code ? e2.code.replace('auth/', '').replace(/-/g, ' ') : 'unknown error');
+    err.style.display = 'block';
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'Sign In';
+  }
+});
+
+$('logout-btn').addEventListener('click', () => signOut(auth));
+
+onAuthStateChanged(auth, (user) => {
+  if (user && user.email === ADMIN_EMAIL) {
+    $('login-screen').style.display = 'none';
+    $('app-screen').style.display = 'flex';
+    startAdmin();
+  } else if (user) {
+    $('login-error').textContent = 'This account is not authorized for admin access.';
+    $('login-error').style.display = 'block';
+    signOut(auth);
+  } else {
+    $('app-screen').style.display = 'none';
+    $('login-screen').style.display = 'flex';
+    if (visitorsUnsub) visitorsUnsub();
+    if (threadUnsub) threadUnsub();
+  }
+});
+
+// ── VISITOR LIST ──
+function timeAgo(date) {
+  if (!date) return '—';
+  const diff = Math.floor((Date.now() - date.getTime()) / 1000);
+  if (diff < 10) return 'just now';
+  if (diff < 60) return diff + 's ago';
+  if (diff < 3600) return Math.floor(diff / 60) + 'm ago';
+  if (diff < 86400) return Math.floor(diff / 3600) + 'h ago';
+  return Math.floor(diff / 86400) + 'd ago';
+}
+
+function isOnline(v) {
+  if (!v.online || !v.lastSeen) return false;
+  const t = v.lastSeen.toDate ? v.lastSeen.toDate() : null;
+  if (!t) return false;
+  return (Date.now() - t.getTime()) < ONLINE_WINDOW_MS;
+}
+
+function renderList() {
+  const term = $('search-input').value.trim().toLowerCase();
+  const list = $('visitor-list');
+  const filtered = visitorsCache.filter(v => {
+    if (!term) return true;
+    return (v.customName || '').toLowerCase().includes(term) ||
+           v.id.toLowerCase().includes(term) ||
+           (v.ip || '').toLowerCase().includes(term);
+  });
+
+  if (filtered.length === 0) {
+    list.innerHTML = '<div id="empty-list">No visitors yet.</div>';
+    return;
+  }
+
+  list.innerHTML = '';
+  filtered.forEach(v => {
+    const online = isOnline(v);
+    const displayName = v.customName || ('Visitor ' + v.id.slice(0, 6));
+    const lastSeenDate = v.lastSeen && v.lastSeen.toDate ? v.lastSeen.toDate() : null;
+    const item = document.createElement('div');
+    item.className = 'visitor-item' + (v.id === selectedUid ? ' active' : '');
+    item.innerHTML = `
+      <div class="row1">
+        <span class="name"><span class="dot ${online ? 'online' : ''}"></span>${escapeHtml(displayName)}</span>
+        ${v.unreadCount ? `<span class="unread-badge">${v.unreadCount > 9 ? '9+' : v.unreadCount}</span>` : ''}
+      </div>
+      <div class="ip">${escapeHtml(v.ip || 'unknown IP')}${Array.isArray(v.ipHistory) && v.ipHistory.length > 1 ? ` <span style="opacity:.6">(+${v.ipHistory.length - 1} more)</span>` : ''}</div>
+      <div class="row1">
+        <div class="preview">${escapeHtml(v.lastMessage || 'No messages yet')}</div>
+        <div class="meta-right">${timeAgo(lastSeenDate)}</div>
+      </div>
+    `;
+    item.addEventListener('click', () => selectVisitor(v.id));
+    list.appendChild(item);
+  });
+}
+
+function escapeHtml(str) {
+  const d = document.createElement('div');
+  d.textContent = str;
+  return d.innerHTML;
+}
+
+function updateStats() {
+  $('stat-total').textContent = visitorsCache.length;
+  $('stat-online').textContent = visitorsCache.filter(isOnline).length;
+}
+
+function startAdmin() {
+  const q = query(collection(db, 'visitors'), orderBy('lastSeen', 'desc'));
+  visitorsUnsub = onSnapshot(q, (snap) => {
+    visitorsCache = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    renderList();
+    updateStats();
+    if (selectedUid) {
+      const v = visitorsCache.find(x => x.id === selectedUid);
+      if (v) renderHeader(v);
+    }
+  });
+
+  // Refresh online/offline + relative times periodically
+  setInterval(() => { renderList(); updateStats(); }, 15000);
+}
+
+$('search-input').addEventListener('input', renderList);
+
+// ── CHAT THREAD ──
+function renderHeader(v) {
+  $('name-input').value = v.customName || '';
+  $('uid-sub').textContent = 'ID: ' + v.id;
+  const online = isOnline(v);
+  $('header-dot').className = 'dot' + (online ? ' online' : '');
+  $('header-status').textContent = online ? 'online' : 'offline';
+  $('header-ip').textContent = v.ip || 'unknown';
+  const first = v.firstSeen && v.firstSeen.toDate ? v.firstSeen.toDate() : null;
+  $('header-first').textContent = first ? first.toLocaleString() : '—';
+
+  const history = Array.isArray(v.ipHistory) ? v.ipHistory : (v.ip ? [v.ip] : []);
+  const histPill = $('header-ip-history-pill');
+  const histPanel = $('ip-history-panel');
+  if (history.length > 0) {
+    histPill.style.display = 'flex';
+    $('header-ip-count').textContent = String(history.length);
+    histPanel.innerHTML = history.map(ip => escapeHtml(ip)).join('<br>');
+  } else {
+    histPill.style.display = 'none';
+    histPanel.style.display = 'none';
+  }
+}
+
+$('header-ip-history-pill').addEventListener('click', () => {
+  const panel = $('ip-history-panel');
+  panel.style.display = panel.style.display === 'none' ? 'block' : 'none';
+});
+
+function renderBubble(m) {
+  const thread = $('thread');
+  const el = document.createElement('div');
+  el.className = 'bubble ' + (m.sender === 'admin' ? 'bubble-admin' : 'bubble-visitor');
+  const t = m.timestamp && m.timestamp.toDate ? m.timestamp.toDate().toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'}) : '';
+  el.innerHTML = `<div>${escapeHtml(m.text)}</div><div class="t">${t}</div>`;
+  thread.appendChild(el);
+  thread.scrollTop = thread.scrollHeight;
+}
+
+async function markVisitorMessagesRead(uid) {
+  try {
+    const q = query(
+      collection(db, 'visitors', uid, 'messages'),
+      where('sender', '==', 'visitor'),
+      where('read', '==', false)
+    );
+    const snap = await getDocs(q);
+    if (!snap.empty) {
+      const batch = writeBatch(db);
+      snap.forEach(d => batch.update(d.ref, { read: true }));
+      await batch.commit();
+    }
+    await updateDoc(doc(db, 'visitors', uid), { unreadCount: 0 });
+  } catch (e) { /* best-effort */ }
+}
+
+function selectVisitor(uid) {
+  selectedUid = uid;
+  renderedMsgIds = new Set();
+  $('no-selection').style.display = 'none';
+  $('chat-content').style.display = 'flex';
+  $('sidebar').classList.remove('mobile-open');
+  $('thread').innerHTML = '';
+
+  const v = visitorsCache.find(x => x.id === uid);
+  if (v) renderHeader(v);
+  renderList();
+
+  if (threadUnsub) threadUnsub();
+  const q = query(collection(db, 'visitors', uid, 'messages'), orderBy('timestamp', 'asc'));
+  threadUnsub = onSnapshot(q, (snap) => {
+    snap.forEach(d => {
+      if (!renderedMsgIds.has(d.id)) {
+        renderedMsgIds.add(d.id);
+        renderBubble(d.data());
+      }
+    });
+  });
+
+  markVisitorMessagesRead(uid);
+}
+
+$('back-btn').addEventListener('click', () => {
+  $('chat-content').style.display = 'none';
+  $('no-selection').style.display = 'flex';
+  $('sidebar').classList.add('mobile-open');
+});
+
+$('save-name-btn').addEventListener('click', async () => {
+  if (!selectedUid) return;
+  const name = $('name-input').value.trim();
+  try {
+    await updateDoc(doc(db, 'visitors', selectedUid), { customName: name });
+  } catch (e) { console.error('Failed to save name:', e); }
+});
+
+$('composer').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  if (!selectedUid) return;
+  const input = $('composer-input');
+  const text = input.value.trim();
+  if (!text) return;
+  input.value = '';
+  try {
+    await addDoc(collection(db, 'visitors', selectedUid, 'messages'), {
+      sender: 'admin',
+      text,
+      timestamp: serverTimestamp(),
+      read: false,
+    });
+    await updateDoc(doc(db, 'visitors', selectedUid), {
+      lastMessage: '(You): ' + text,
+      lastMessageAt: serverTimestamp(),
+    });
+  } catch (err) { console.error('Send error:', err); }
+});
+</script>
+</body>
+</html>

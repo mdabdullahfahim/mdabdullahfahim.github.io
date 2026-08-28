@@ -1,0 +1,424 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Photo Gallery — MD Abdullah Fahim</title>
+<meta name="description" content="A photo gallery by MD Abdullah Fahim." />
+<meta name="google-site-verification" content="w_1wJ1vjE2b2MIYxr1dD9_FBoOIUoFiORyNaTBW3Bpg" />
+<meta name="google-site-verification" content="PnMqPZmfVoUCvIIA58YvBsniuTafKsOEEzuY-IpRl_E"/>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,300;9..144,500;9..144,600&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:#121214;
+    --paper:#f1ede4;
+    --paper-dim:#c9c3b4;
+    --line: rgba(241,237,228,0.14);
+    --gold:#c79a4b;
+    --gold-soft: rgba(199,154,75,0.16);
+    --radius: 6px;
+    --gap: 14px;
+  }
+
+  *{ box-sizing:border-box; }
+
+  html,body{
+    margin:0;
+    padding:0;
+    background:var(--ink);
+    color:var(--paper);
+    font-family:'Inter', sans-serif;
+    -webkit-font-smoothing:antialiased;
+  }
+
+  a{ color:inherit; }
+
+  ::selection{ background:var(--gold); color:var(--ink); }
+
+  /* ---------- Header ---------- */
+  header.site{
+    padding: 64px 28px 40px;
+    max-width: 1400px;
+    margin: 0 auto;
+    border-bottom: 1px solid var(--line);
+  }
+
+  .eyebrow{
+    font-size: 12px;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+    color: var(--gold);
+    margin: 0 0 18px;
+    display:flex;
+    align-items:center;
+    gap:10px;
+  }
+  .eyebrow::before{
+    content:"";
+    width:26px;
+    height:1px;
+    background:var(--gold);
+    display:inline-block;
+  }
+
+  h1.name{
+    font-family:'Fraunces', serif;
+    font-weight:500;
+    font-optical-sizing:auto;
+    font-size: clamp(2.4rem, 6vw, 4.6rem);
+    line-height: 1.02;
+    margin: 0 0 20px;
+    letter-spacing: -0.01em;
+  }
+
+  h1.name em{
+    font-style: italic;
+    font-weight: 300;
+    color: var(--paper-dim);
+  }
+
+  .meta-row{
+    display:flex;
+    flex-wrap:wrap;
+    gap: 10px 28px;
+    align-items:center;
+    font-size: 14px;
+    color: var(--paper-dim);
+  }
+
+  .meta-row a{
+    text-decoration:none;
+    border-bottom: 1px solid transparent;
+    transition: border-color .2s ease, color .2s ease;
+    color: var(--paper);
+  }
+  .meta-row a:hover{
+    border-color: var(--gold);
+    color: var(--gold);
+  }
+
+  .meta-dot{ color: var(--line); }
+
+  .count-badge{
+    margin-left:auto;
+    font-family:'Fraunces', serif;
+    font-size: 13px;
+    color: var(--paper-dim);
+    border: 1px solid var(--line);
+    padding: 6px 12px;
+    border-radius: 999px;
+  }
+
+  /* ---------- Masonry gallery ---------- */
+  main{
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 40px 24px 90px;
+  }
+
+  .masonry{
+    column-count: 1;
+    column-gap: var(--gap);
+  }
+  @media (min-width: 560px){ .masonry{ column-count: 2; } }
+  @media (min-width: 860px){ .masonry{ column-count: 3; } }
+  @media (min-width: 1180px){ .masonry{ column-count: 4; } }
+
+  .tile{
+    break-inside: avoid;
+    margin-bottom: var(--gap);
+    position: relative;
+    border-radius: var(--radius);
+    overflow: hidden;
+    background: #1c1c1f;
+    border: 1px solid var(--line);
+    cursor: zoom-in;
+  }
+
+  .tile img{
+    display:block;
+    width: 100%;
+    height: auto;
+    transform: scale(1);
+    transition: transform .6s cubic-bezier(.2,.7,.2,1), filter .6s ease;
+    filter: saturate(0.96);
+  }
+
+  .tile:hover img{
+    transform: scale(1.045);
+  }
+
+  .tile .tag{
+    position:absolute;
+    left: 10px;
+    bottom: 10px;
+    font-family:'Fraunces', serif;
+    font-size: 12px;
+    color: var(--paper);
+    background: rgba(18,18,20,0.55);
+    backdrop-filter: blur(6px);
+    border: 1px solid var(--line);
+    padding: 5px 10px;
+    border-radius: 999px;
+    opacity: 0;
+    transform: translateY(6px);
+    transition: opacity .3s ease, transform .3s ease;
+  }
+  .tile:hover .tag{
+    opacity: 1;
+    transform: translateY(0);
+  }
+
+  .tile::after{
+    content:"";
+    position:absolute;
+    inset:0;
+    background: linear-gradient(180deg, transparent 55%, rgba(0,0,0,0.45) 100%);
+    opacity: 0;
+    transition: opacity .3s ease;
+    pointer-events:none;
+  }
+  .tile:hover::after{ opacity: 1; }
+
+  .tile.loading{
+    aspect-ratio: 3/4;
+  }
+  .tile.loading img{ opacity: 0; }
+  .tile.loaded img{ opacity: 1; }
+  .tile img{
+    animation: none;
+  }
+  .tile.loaded img{
+    animation: reveal .5s ease;
+  }
+  @keyframes reveal{
+    from{ opacity:0; transform: scale(1.02); }
+    to{ opacity:1; transform: scale(1); }
+  }
+
+  /* ---------- Lightbox ---------- */
+  .lightbox{
+    position: fixed;
+    inset: 0;
+    background: rgba(10,10,11,0.94);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 100;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity .25s ease;
+    padding: 40px 20px;
+  }
+  .lightbox.open{ opacity: 1; pointer-events: auto; }
+
+  .lightbox img{
+    max-width: min(920px, 92vw);
+    max-height: 84vh;
+    border-radius: 4px;
+    box-shadow: 0 30px 80px rgba(0,0,0,0.55);
+    border: 1px solid var(--line);
+  }
+
+  .lightbox .lb-index{
+    position:absolute;
+    bottom: 28px;
+    left: 50%;
+    transform: translateX(-50%);
+    font-family:'Fraunces', serif;
+    color: var(--paper-dim);
+    font-size: 13px;
+    letter-spacing: 0.06em;
+  }
+
+  .lb-btn{
+    position: absolute;
+    top: 24px;
+    right: 28px;
+    background: transparent;
+    border: 1px solid var(--line);
+    color: var(--paper);
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    font-size: 18px;
+    cursor: pointer;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    transition: border-color .2s ease, color .2s ease;
+  }
+  .lb-btn:hover{ border-color: var(--gold); color: var(--gold); }
+
+  .lb-nav{
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    background: transparent;
+    border: 1px solid var(--line);
+    color: var(--paper);
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    font-size: 20px;
+    cursor: pointer;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    transition: border-color .2s ease, color .2s ease, background .2s ease;
+  }
+  .lb-nav:hover{ border-color: var(--gold); color: var(--gold); }
+  .lb-prev{ left: 20px; }
+  .lb-next{ right: 20px; }
+
+  @media (max-width: 640px){
+    .lb-nav{ width: 38px; height: 38px; }
+    .lb-prev{ left: 8px; }
+    .lb-next{ right: 8px; }
+  }
+
+  /* ---------- Footer ---------- */
+  footer{
+    border-top: 1px solid var(--line);
+    padding: 30px 28px 40px;
+    max-width: 1400px;
+    margin: 0 auto;
+    display:flex;
+    flex-wrap:wrap;
+    gap: 10px 20px;
+    align-items:center;
+    justify-content: space-between;
+    font-size: 13px;
+    color: var(--paper-dim);
+  }
+  footer a{ text-decoration:none; }
+  footer a:hover{ color: var(--gold); }
+
+  :focus-visible{
+    outline: 2px solid var(--gold);
+    outline-offset: 2px;
+  }
+
+  @media (prefers-reduced-motion: reduce){
+    .tile img, .tile .tag, .tile::after, .lightbox{ transition: none !important; animation: none !important; }
+  }
+</style>
+</head>
+<body>
+
+<header class="site">
+  <p class="eyebrow">Photo Gallery</p>
+  <h1 class="name">MD Abdullah Fahim<br/><em>— a visual archive</em></h1>
+  <div class="meta-row">
+    <a href="https://fahimabdullah.me" target="_blank" rel="noopener">fahimabdullah.me</a>
+    <span class="meta-dot">·</span>
+    <a href="mailto:abdullahfahim139549@gmail.com">abdullahfahim139549@gmail.com</a>
+    <span class="count-badge" id="countBadge">7 photos</span>
+  </div>
+</header>
+
+<main>
+  <div class="masonry" id="masonry"></div>
+</main>
+
+<footer>
+  <span>© <span id="year"></span> MD Abdullah Fahim</span>
+  <span>Built and maintained by <a href="https://fahimabdullah.me" target="_blank" rel="noopener">fahimabdullah.me</a></span>
+</footer>
+
+<div class="lightbox" id="lightbox">
+  <button class="lb-btn" id="lbClose" aria-label="Close">&times;</button>
+  <button class="lb-nav lb-prev" id="lbPrev" aria-label="Previous">&#8249;</button>
+  <img id="lbImg" src="" alt="" />
+  <button class="lb-nav lb-next" id="lbNext" aria-label="Next">&#8250;</button>
+  <div class="lb-index" id="lbIndex"></div>
+</div>
+
+<script>
+  // Relative filenames only — this keeps the gallery working whether it's
+  // deployed at a domain root (e.g. Cloudflare Pages) or inside a repo
+  // subpath (e.g. https://username.github.io/repo-name/).
+  const files = [
+    "md-abdullah-fahim.jpg",
+    "md-abdullah-fahim(1).jpg",
+    "md-abdullah-fahim(2).jpg",
+    "md-abdullah-fahim(3).jpg",
+    "md-abdullah-fahim(4).jpg",
+    "md-abdullah-fahim(5).jpg",
+    "md-abdullah-fahim(6).jpg"
+  ];
+
+  // Resolve every path relative to this HTML file's own location,
+  // so it works from any folder depth on GitHub Pages, Cloudflare
+  // Pages, or a plain local file:// open.
+  const base = new URL('.', window.location.href);
+  const srcs = files.map(f => new URL(encodeURIComponent(f).replace(/%28/g,'(').replace(/%29/g,')'), base).href);
+
+  const masonry = document.getElementById('masonry');
+  document.getElementById('year').textContent = new Date().getFullYear();
+  document.getElementById('countBadge').textContent = files.length + (files.length === 1 ? ' photo' : ' photos');
+
+  srcs.forEach((src, i) => {
+    const tile = document.createElement('div');
+    tile.className = 'tile loading';
+    tile.dataset.index = i;
+
+    const img = document.createElement('img');
+    img.src = src;
+    img.alt = 'MD Abdullah Fahim — photo ' + (i + 1);
+    img.loading = 'lazy';
+    img.decoding = 'async';
+    img.onload = () => { tile.classList.remove('loading'); tile.classList.add('loaded'); };
+    img.onerror = () => { tile.style.display = 'none'; };
+
+    const tag = document.createElement('span');
+    tag.className = 'tag';
+    tag.textContent = String(i + 1).padStart(2, '0') + ' / ' + String(files.length).padStart(2, '0');
+
+    tile.appendChild(img);
+    tile.appendChild(tag);
+    tile.addEventListener('click', () => openLightbox(i));
+    masonry.appendChild(tile);
+  });
+
+  // ---------- Lightbox logic ----------
+  const lightbox = document.getElementById('lightbox');
+  const lbImg = document.getElementById('lbImg');
+  const lbIndex = document.getElementById('lbIndex');
+  let current = 0;
+
+  function openLightbox(i){
+    current = i;
+    updateLightbox();
+    lightbox.classList.add('open');
+    document.body.style.overflow = 'hidden';
+  }
+  function closeLightbox(){
+    lightbox.classList.remove('open');
+    document.body.style.overflow = '';
+  }
+  function updateLightbox(){
+    lbImg.src = srcs[current];
+    lbImg.alt = 'MD Abdullah Fahim — photo ' + (current + 1);
+    lbIndex.textContent = String(current + 1).padStart(2, '0') + ' / ' + String(srcs.length).padStart(2, '0');
+  }
+  function next(){ current = (current + 1) % srcs.length; updateLightbox(); }
+  function prev(){ current = (current - 1 + srcs.length) % srcs.length; updateLightbox(); }
+
+  document.getElementById('lbClose').addEventListener('click', closeLightbox);
+  document.getElementById('lbNext').addEventListener('click', next);
+  document.getElementById('lbPrev').addEventListener('click', prev);
+  lightbox.addEventListener('click', (e) => { if (e.target === lightbox) closeLightbox(); });
+
+  document.addEventListener('keydown', (e) => {
+    if (!lightbox.classList.contains('open')) return;
+    if (e.key === 'Escape') closeLightbox();
+    if (e.key === 'ArrowRight') next();
+    if (e.key === 'ArrowLeft') prev();
+  });
+</script>
+
+</body>
+</html>
